@@ -1,0 +1,371 @@
+# Args: (see `blenderproc/create_config.py`)
+{
+  "version": 3,
+  "setup": {
+    "blender_install_path": "/home/<env:USER>/blender/",
+    "pip": [
+      "h5py"
+    ]
+  },
+  "modules": [
+    {
+      "module": "main.Initializer",
+      "config": {
+        "global": {
+          "output_dir": "<args:1>",
+          "max_bounces": 200,
+          "diffuse_bounces": 200,
+          "glossy_bounces": 200,
+          "transmission_bounces": 200,
+          "transparency_bounces": 200,
+        }
+      }
+    },
+    {
+      "module": "loader.SuncgLoader",
+      "config": {
+        "path": "<args:0>"
+      }
+    },
+    {
+      "module": "loader.CCMaterialLoader",
+      # you can use the scripts/download_cc_textures.py to download them (in the BlenderProc root dir)
+      "config": {
+        "preload": True,
+        "folder_path": /path/to/cctextures
+      }
+    },
+    {
+      "module": "manipulators.WorldManipulator",
+      "config": {
+        "cp_physics": False,
+        "cp_category_id": 0,
+      },
+    },
+    {
+      "module": "manipulators.EntityManipulator",
+      "config": {
+          "selector": {
+              "provider": "getter.Entity",
+              "conditions": {
+                  "type": "MESH"
+              }
+          },
+          "cp_physics": False,
+          "cp_category_id": 0,
+      }
+    },
+    # select one table
+    {
+      "module": "object.TableExtractor",
+      "config": {}
+    },
+    {
+      "module": "object.OnFloorRemover",
+      "config": {}
+    },
+    # modify texture of table as well
+    {
+      "module": "manipulators.EntityManipulator",
+      "config": {
+        "selector": {
+          "provider": "getter.Entity",
+          "conditions": {
+            "name": "selected_table"
+          }
+        },
+        "cf_add_uv_mapping": {
+          "projection": "smart",
+          "forced_recalc_of_uv_maps": True
+        },
+        "cf_randomize_materials": {
+          "randomization_level": 1.,
+          "materials_to_replace_with": {
+            "provider": "getter.Material",
+            "random_samples": 1,
+            "conditions": {
+              "cp_is_cc_texture": True
+            }
+          }
+        }
+      }
+    },
+    {
+      "module": "camera.CameraSampler",
+      "config": {
+        "intrinsics": {
+          "cam_K": [focal_length, 0.0, 320.0, 0.0, focal_length, 240.0, 0.0, 0.0, 1.0],
+          "resolution_x": 640,
+          "resolution_y": 480,
+          "stereo_convergence_mode": "PARALLEL",
+          "interocular_distance": baseline
+        },
+        "cam_poses": [
+        {
+          "proximity_checks": {
+            "min": 0.25
+          },
+          "excluded_objs_in_proximity_check":  {
+            "provider": "getter.Entity",
+            "conditions": [{
+              "name": "selected_table", "cp_coarse_grained_class": "selected_object"},
+            { "name": "selected_object", "cp_coarse_grained_class": "selected_object"}]
+          },
+          "check_if_objects_visible": {
+            "provider": "getter.Entity",
+            "conditions": {
+              "name": "selected_table"
+            }
+          },
+          "default_cam_param": {
+            "resolution_x": 640,
+            "resolution_y": 480
+          },
+          "max_tries": 10000,
+          "resolution_x": 640,
+          "resolution_y": 480,
+          "number_of_samples": 10,
+          "location": {
+            "provider": "sampler.Shell",
+            "center": {
+                "provider": "getter.POI",
+                "selector": {
+                    "provider": "getter.Entity",
+                    "conditions": {
+                        "name": "selected_table",
+                    },
+                    "random_samples": 15
+                }
+            },
+            "radius_min": 0.2,
+            "radius_max": 1.5,
+            "elevation_min": 30,
+            "elevation_max": 89,
+            "uniform_elevation": True
+          },
+          "rotation": {
+            "format": "look_at",
+            "value": {
+              "provider": "getter.POI",
+              "selector": {
+                "provider": "getter.Entity",
+                "conditions": {
+                  "cp_coarse_grained_class": "selected_object",
+                },
+                "random_samples": 10
+              }
+            },
+            "inplane_rot": {
+              "provider": "sampler.Value",
+              "type": "float",
+              "min": -0.7854,
+              "max": 0.7854
+            }
+          }
+        }
+        ]
+      }
+    },
+    {
+      "module": "lighting.LightSampler",
+      "config": {
+        "lights": [
+        {
+          "location": {
+            "provider": "sampler.Shell",
+            "center": {
+                "provider": "getter.POI",
+                "selector": {
+                    "provider": "getter.Entity",
+                    "conditions": {
+                        "name": "selected_table",
+                    },
+                }
+            },
+            "radius_min": 1,
+            "radius_max": 1.5,
+            "elevation_min": 15,
+            "elevation_max": 89,
+            "uniform_elevation": True
+          },
+          "color": {
+            "provider": "sampler.Color",
+            "min": [0.5, 0.5, 0.5, 1.0],
+            "max": [1.0, 1.0, 1.0, 1.0]
+          },
+          "type": "POINT",
+          "energy": 200
+        }
+        ]
+      }
+    },
+    {   
+      "module": "lighting.LightSampler",
+      "config": {
+        "lights": [
+        {
+          "location": {
+            "provider": "sampler.Shell",
+            "center": {
+                "provider": "getter.POI",
+                "selector": {
+                    "provider": "getter.Entity",
+                    "conditions": {
+                        "name": "selected_table",
+                    },
+                }
+            },
+            "radius_min": 1,
+            "radius_max": 1.5,
+            "elevation_min": 15, 
+            "elevation_max": 89, 
+            "uniform_elevation": True
+          },
+          "color": {
+            "provider": "sampler.Color",
+            "min": [0.5, 0.5, 0.5, 1.0],
+            "max": [1.0, 1.0, 1.0, 1.0]
+          },
+          "type": "POINT",
+          "energy": 200 
+        }
+        ]
+      }   
+    },  
+    {
+      "module": "manipulators.MaterialManipulator",
+      "config": {
+        "selector": {
+          "provider": "getter.Material",
+          "conditions": [
+            {"name": "wood.*"},
+            {"name": "laminate.*"},
+            {"name": "beam.*"}
+          ]
+        },
+        "cf_set_Roughness": {
+           "provider": "sampler.Value",
+           "type": "float",
+           "min": 0.05,
+           "max": 0.5,
+        },
+        "cf_set_Specular": {
+          "provider": "sampler.Value",
+          "type": "float",
+          "min": 0.5,
+          "max": 1,
+        },
+        "cf_color_link_to_displacement": {
+          "provider": "sampler.Value",
+          "type": "float",
+          "min": 0.001,
+          "max": 0.15,
+        },
+         "cf_set_Alpha": 1.0,
+        "mode": "once_for_each"
+      }
+    },
+    {
+      "module": "manipulators.MaterialManipulator",
+      "config": {
+        "selector": {
+          "provider": "getter.Material",
+          "conditions": [
+            { "name": "tile.*" },
+            { "name": "brick.*" },
+            { "name": "stone.*" }
+          ]
+        },
+        "cf_set_Roughness": {
+          "provider": "sampler.Value",
+          "type": "float",
+          "min": 0.0,
+          "max": 0.2,
+        },
+        "cf_set_Specular": {
+          "provider": "sampler.Value",
+          "type": "float",
+          "min": 0.9,
+          "max": 1,
+        },
+        "cf_set_Alpha": 1.0,
+        "mode": "once_for_each"
+      }
+    },
+    {
+      "module": "manipulators.MaterialManipulator",
+      "config": {
+        "selector": {
+          "provider": "getter.Material",
+          "conditions": [
+          { "name": "carpet.*" },
+          { "name": "textile.*" }
+          ]
+        },
+        "cf_set_Roughness": {
+          "provider": "sampler.Value",
+          "type": "float",
+          "min": 0.5,
+          "max": 1.0,
+        },
+        "cf_set_Specular": {
+          "provider": "sampler.Value",
+          "type": "float",
+          "min": 0.1,
+          "max": 0.3,
+        },
+        "cf_set_Alpha": 1.0,
+        "mode": "once_for_each"
+      }
+    },
+    {
+      "module": "writer.CameraStateWriter",
+      "config": {
+        "attributes_to_write": ["location", "rotation_euler", "fov_x", "fov_y", "cam_K"]
+      }
+    },
+    {
+      "module": "loader.CCMaterialLoader",
+      "config": {
+        "fill_used_empty_materials": True,
+        "folder_path": /path/to/cctextures
+        }
+    },
+    {
+      "module": "manipulators.MaterialManipulator",
+      "config": {
+        "selector": {
+          "provider": "getter.Material",
+          "conditions": [{"name": ".*", use_nodes: True}]
+        },
+        "cf_set_Alpha": 1.0,
+      }
+    },
+    {
+      "module": "renderer.RgbRenderer",
+      "config": {
+        "samples": 256,
+        "render_distance": True,
+        "render_normals": True,
+        "stereo": True,
+        "use_alpha": True
+      }
+    },
+    {
+      "module": "renderer.SegMapRenderer",
+      "config": {
+        "use_alpha": True,
+      }
+    },
+    {
+      "module": "writer.Hdf5Writer",
+      "config": {
+        "postprocessing_modules": {
+        "distance": [
+           { "module": "postprocessing.Dist2Depth" },
+         ]
+       }
+      }
+    }
+  ]
+}

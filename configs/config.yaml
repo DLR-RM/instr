@@ -1,0 +1,41 @@
+# BASE CONFIG
+EXP:  # folder structure will be ROOT/NAME_DATE_TIME
+  ROOT: output  # /path/to/experiment_output
+  NAME: instr
+
+DATA:
+  NUM_WORKERS: 4
+  TRAIN:
+    ROOT: /path/to/train_split_folder
+    BATCH_SIZE: 2
+    TRANSFORMS: True
+  VAL:
+    ROOT: /path/to/val_split_folder
+    BATCH_SIZE: 2
+    TRANSFORMS: False
+  TEST:
+    ROOT: /path/to/stios
+    BATCH_SIZE: 2
+    TRANSFORMS: False
+
+MODEL:
+  NUM_QUERIES: 15
+  AUX_DECODER_LOSS: True
+  WITH_DISP: True
+  AXIAL_ATTENTION: True
+  QUERY_PROC: expanded  # expanded, att, attcat_tfenc, attcat_bb
+
+LOSS:
+  POWER: 0.2
+  POS_WEIGHT: 1.
+  NEG_WEIGHT: 1.
+
+OPTIMIZER:
+  TYPE: "optim.AdamW"  # AdamW is default
+  LR: 0.0001
+  WEIGHT_DECAY: 0.01
+
+SCHEDULER:
+  TYPE: "optim.lr_scheduler.StepLR"
+  step_size: 10
+  gamma: 0.5
